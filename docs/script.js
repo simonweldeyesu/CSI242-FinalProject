@@ -1,63 +1,116 @@
-// SELECT START ELEMENT
-const options = document.querySelector(".options");
+window.addEventListener('DOMContentLoaded', () => {
+    const boxes = Array.from(document.querySelectorAll('.box'));
+    const playerDisplay = document.querySelector('.display-player');
+    const resetButton = document.querySelector('#reset');
+    const announcer = document.querySelector('.winner');
 
-// SELECT BUTTONS
-const computerBtn = document.querySelector(".computer");
-const friendBtn = document.querySelector(".friend");
-const xBtn = document.querySelector(".x");
-const oBtn = document.querySelector(".o");
-const playBtn = document.querySelector(".play");
+    let board = ['', '', '', '', '', '', '', '', ''];
+    let currentPlayer = 'X';
+    let isGameActive = true;
 
-// GAME OVER ELEMENT
-const gameOverElement = document.querySelector(".gameover");
+    const PLAYERX_WON = 'PLAYERX_WON';
+    const PLAYERO_WON = 'PLAYERO_WON';
+    const TIE = 'TIE';
 
-const player = new Object;
-let OPPONENT;
+    const winningConditions = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6]
+    ];
 
-oBtn.addEventListener("click", function(){
-    player.man = "O";
-    player.computer = "X";
-    player.friend = "X";
+    function handleResultValidation() {
+        let roundWon = false;
+        for (let i = 0; i <= 7; i++) {
+            const winCondition = winningConditions[i];
+            const a = board[winCondition[0]];
+            const b = board[winCondition[1]];
+            const c = board[winCondition[2]];
+            if (a === '' || b === '' || c === '') {
+                continue;
+            }
+            if (a === b && b === c) {
+                roundWon = true;
+                break;
+            }
+        }
 
-    switchActive(xBtn, oBtn);
-});
+    if (roundWon) {
+            announce(currentPlayer === 'X' ? PLAYERX_WON : PLAYERO_WON);
+            isGameActive = false;
+            return;
+        }
 
-xBtn.addEventListener("click", function(){
-    player.man = "X";
-    player.computer = "O";
-    player.friend = "O";
-
-    switchActive(oBtn, xBtn);
-});
- 
-computerBtn.addEventListener("click", function(){
-    OPPONENT = "computer";
-    switchActive(friendBtn, computerBtn);
-});
-
-friendBtn.addEventListener("click", function(){
-    OPPONENT = "friend";
-    switchActive(computerBtn, friendBtn);
-});
-
-playBtn.addEventListener("click", function(){
-    if( !OPPONENT){
-        computerBtn.style.backgroundColor = "red";
-        friendBtn.style.backgroundColor = "red";
-        return;
+    if (!board.includes(''))
+        announce(TIE);
     }
 
-    if( !player.man ){
-        oBtn.style.backgroundColor = "red";
-        xBtn.style.backgroundColor = "red";
-        return;
+    const announce = (type) => {
+        switch(type){
+            case PLAYERO_WON:
+                announcer.innerHTML = 'Player <span class="playerO">O</span> Won';
+                break;
+            case PLAYERX_WON:
+                announcer.innerHTML = 'Player <span class="playerX">X</span> Won';
+                break;
+            case TIE:
+                announcer.innerText = 'Tie';
+        }
+        announcer.classList.remove('hide');
+    };
+
+    const isValidAction = (box) => {
+        if (box.innerText === 'X' || box.innerText === 'O'){
+            return false;
+        }
+
+        return true;
+    };
+
+    const updateBoard =  (index) => {
+        board[index] = currentPlayer;
+    }
+
+    const changePlayer = () => {
+        playerDisplay.classList.remove(`player${currentPlayer}`);
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        playerDisplay.innerText = currentPlayer;
+        playerDisplay.classList.add(`player${currentPlayer}`);
+    }
+
+    const userAction = (box, index) => {
+        if(isValidAction(box) && isGameActive) {
+            box.innerText = currentPlayer;
+            box.classList.add(`player${currentPlayer}`);
+            updateBoard(index);
+            handleResultValidation();
+            changePlayer();
+        }
     }
     
-    init(player, OPPONENT);
-    options.classList.add("hide");
-});
+    const resetBoard = () => {
+        board = ['', '', '', '', '', '', '', '', ''];
+        isGameActive = true;
+        announcer.classList.add('hide');
 
-function switchActive(off, on){
-    off.classList.remove("active");
-    on.classList.add("active");
-}
+        if (currentPlayer === 'O') {
+            changePlayer();
+        }
+
+        boxes.forEach(box => {
+            box.innerText = '';
+            box.classList.remove('playerX');
+            box.classList.remove('playerO');
+        });
+    }
+
+    boxes.forEach( (box, index) => {
+        box.addEventListener('click', () => userAction(box, index));
+    });
+
+    resetButton.addEventListener('click', resetBoard);
+});
